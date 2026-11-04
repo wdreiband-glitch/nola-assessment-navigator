@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="NOLA Assessment Navigator: a Tulane student prototype chatbot that explains Orleans Parish (New Orleans) property assessments, homestead exemptions, millage, tax bills, and how to appeal, with cited sources." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://wdreiband-glitch.github.io/nola-assessment-navigator/" />
+  <title>NOLA Assessment Navigator — Layer 1 (student prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #102a43;
+      --navy-2: #243b53;
+      --ink: #1f2933;
+      --muted: #627d98;
+      --line: #d9e2ec;
+      --bg: #f7fafc;
+      --card: #ffffff;
+      --gold: #b0893e;
+      --warn: #fff6e5;
+      --warn-ink: #8a5800;
+      --bot: #eef2f6;
+      --user: #102a43;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+    .banner {
+      background: var(--warn);
+      color: var(--warn-ink);
+      border-bottom: 1px solid #f0d9a8;
+      padding: 10px 18px;
+      font-size: 13.5px;
+      line-height: 1.45;
+    }
+    .banner strong { font-weight: 700; }
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 12px 18px 10px;
+    }
+    header h1 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.25rem;
+      margin: 0 0 2px;
+      font-weight: 700;
+    }
+    header p { margin: 0; color: #d9e2ec; font-size: 13px; }
+    .layer-tag {
+      display: inline-block;
+      margin-top: 6px;
+      background: var(--gold);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    body.shot .chips, body.shot form, body.shot footer { display: none; }
+    body.shot #log { overflow: visible; padding: 16px 18px 24px; }
+    body.shot main { max-width: 800px; }
+    body.shot .msg { max-width: 100%; align-self: stretch; }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 16px 4px;
+    }
+    .chips button {
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--navy-2);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .chips button:hover { border-color: var(--navy); }
+    #log {
+      flex: 1;
+      overflow: auto;
+      padding: 8px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .msg { max-width: 92%; }
+    .msg.user { align-self: flex-end; }
+    .bubble {
+      padding: 12px 14px;
+      border-radius: 14px;
+      line-height: 1.55;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+    .msg.user .bubble {
+      background: var(--user);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.bot .bubble {
+      background: var(--bot);
+      color: var(--ink);
+      border-bottom-left-radius: 4px;
+    }
+    .bubble p { margin: 0 0 10px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul { margin: 6px 0 10px; padding-left: 18px; }
+    .cite {
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .sources, .contact {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .sources a { color: var(--navy-2); }
+    .contact { border-top: 1px solid var(--line); padding-top: 8px; }
+    form {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--line);
+      background: var(--card);
+    }
+    form input {
+      flex: 1;
+      font: inherit;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    form button {
+      background: var(--navy);
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 0 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    footer {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 8px 16px 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <strong>Student prototype.</strong>
+    This page is a Tulane class project (AI and Real Estate). It is not affiliated with the Orleans Parish Assessor, the City of New Orleans, the Board of Review, or the Treasury. It cannot change a value, file an appeal, or grant an exemption. It is not legal or tax advice.
+  </div>
+  <header>
+    <h1>NOLA Assessment Navigator</h1>
+    <p>Plain-language answers about Orleans Parish assessments, millage, exemptions, and appeals — with sources.</p>
+    <span class="layer-tag">Layer 1 · general guidance</span>
+  </header>
+  <main>
+    <div class="chips" id="chips"></div>
+    <div id="log" aria-live="polite"></div>
+    <form id="ask">
+      <input id="q" type="text" autocomplete="off" placeholder="Ask how assessments, millage, homestead, or appeals work…" />
+      <button type="submit">Ask</button>
+    </form>
+    <footer>Will Dreiband · Tulane University · Layer 2 (your parcel) and Layer 3 (market context) are not live.</footer>
+  </main>
+
+<script>
+const SOURCES = {
+  S1: { title: "Louisiana Constitution Art. VII §18", url: "https://www.legis.la.gov/Legis/Law.aspx?d=206545", type: "Law" },
+  S2: { title: "NOLA City Council — Property Tax Assessments and Appeals", url: "https://council.nola.gov/resources/property-tax-assessments-and-appeals/", type: "Official" },
+  S3: { title: "NOLA Treasury — Millages: How Taxes are Calculated", url: "https://nola.gov/next/treasury/topics/how-taxes-are-calculated/", type: "Official" },
+  S4: { title: "NOLA Treasury — Property Tax FAQ", url: "https://nola.gov/next/treasury/topics/faq/", type: "Official" },
+  S5: { title: "Orleans Parish Assessor — 2027 rolls open", url: "https://www.nolaassessor.com/2026/07/13/2027-assessment-rolls-open-for-public-inspection-july-15-to-august-17/", type: "Official" },
+  S6: { title: "Biz New Orleans — 2026 Orleans Assessments Open", url: "https://bizneworleans.com/2026-orleans-assessments-open-online-appeals-available/", type: "News" },
+  S7: { title: "FOX 8 — Proposed 2027 tax increase", url: "https://www.fox8live.com/2026/09/28/new-orleans-property-owners-could-pay-more-under-proposed-2027-tax-increase/", type: "News" },
+  S8: { title: "Hoodline — Council weighs 2027 tax hike", url: "https://hoodline.com/2026/10/new-orleans-council-weighs-42m-tax-hike-to-save-shelters-grass-cutting/", type: "News" },
+  S9: { title: "BGR — Property tax trap for senior and disabled homeowners", url: "https://www.bgr.org/property-tax-senior-disabled-freeze/", type: "Research" },
+  S10: { title: "Verite News — Senior, disabled homeowners overcharged", url: "https://veritenews.org/2026/08/10/assessors-office-tax-freeze-homeowners/", type: "News" },
+  S11: { title: "Louisiana Law Help — Homestead Exemption", url: "https://louisianalawhelp.org/resource/homestead-exemption-for-property-taxes-in-louisiana", type: "Legal aid" },
+  S12: { title: "Gordon Arata — 2024 quadrennial appeals", url: "https://gordonarata.com/dont-fall-flat-on-your-assessment-the-property-tax-appeals-deadline-is-august-18-2023/", type: "Law firm (2023)" },
+  S13: { title: "BGR PolicyWatch — Revisiting Assessment Issues (2020)", url: "https://www.bgr.org/report-index/policywatch-revisiting-assessment-issues-in-new-orleans/", type: "Research (2020)" },
+  S14: { title: "Biz New Orleans — Assessor homestead reminder (2015)", url: "https://bizneworleans.com/orleans-assessor-williams-reminds-property-owners-to-ensure-homestead-exemptions-special-assessments-are-up-to-date/", type: "News (2015)" },
+  Calc: { title: "Prototype arithmetic by this student project using published millage inputs", url: "", type: "Calculation" }
+};
+
+const CONTACTS = {
+  assessor: "Orleans Parish Assessor — 504-754-8811 · nolaassessor.com · City Hall, 1300 Perdido St., 4th Floor (values, exemptions, freezes).",
+  bor: "City Council sitting as Board of Review — 504-658-1080 (formal assessment appeals).",
+  treasury: "City Bureau of Treasury — 504-658-1712 (bills and payments).",
+  ltc: "Louisiana Tax Commission — latax.la.gov (appeals of Board of Review decisions)."
+};
+
+function tag(id) {
+  const s = SOURCES[id];
+  if (!s) return "";
+  if (id === "Calc") return `<a class="cite" href="#calc">[Calc]</a>`;
+  return `<a class="cite" href="${s.url}" target="_blank" rel="noopener">[${id}]</a>`;
+}
+
+function sourceList(ids) {
+  const unique = [...new Set(ids)];
+  const items = unique.map((id) => {
+    const s = SOURCES[id];
+    if (!s) return "";
+    if (id === "Calc") return `<div><strong>[Calc]</strong> ${s.title} (${s.type})</div>`;
+    return `<div><a href="${s.url}" target="_blank" rel="noopener">[${id}] ${s.title}</a> · ${s.type}</div>`;
+  }).join("");
+  return `<div class="sources"><strong>Sources</strong>${items}</div>`;
+}
+
+function contactBlock(keys) {
+  const lines = keys.map((k) => CONTACTS[k]).join("<br>");
+  return `<div class="contact"><strong>Talk to a person:</strong><br>${lines}<br>For decisions, ask a licensed attorney, CPA, or appraiser. This prototype cannot file anything for you.</div>`;
+}
+
+function htmlAnswer(paragraphs, sourceIds, contacts) {
+  const body = paragraphs.map((p) => `<p>${p}</p>`).join("");
+  return body + sourceList(sourceIds) + contactBlock(contacts);
+}
+
+const TOPICS = {
+  values: {
+    keys: ["assessed", "market value", "fair market", "fmv", "cama", "mass appraisal", "how.*value", "apprais", "percentage", "10%", "15%", "25%"],
+    run() {
+      return htmlAnswer([
+        `Fair market value is the Assessor’s estimate of what the property is worth. Assessed value is a set percentage of that number, not a separate appraisal. ${tag("S1")}${tag("S2")}`,
+        `The Louisiana Constitution sets those percentages: 10% for land and residential improvements; 15% for commercial improvements and business movable property; 25% for public service property (excluding land). ${tag("S1")}${tag("S2")}`,
+        `Example of the ratio only, not a bill: $300,000 fair market value × 10% = $30,000 assessed value. ${tag("Calc")} The 10% ratio comes from ${tag("S1")}${tag("S2")}, not from the Treasury millage page.`,
+        `The Assessor uses computer-assisted mass appraisal (CAMA): models value many properties at once rather than inspecting each house as a fee appraisal would. ${tag("S13")} That 2020 research report is dated.`,
+        `A 2023 law-firm summary said the last parish-wide reassessment took effect for tax year 2024 (values as of January 1, 2023) and that assessments for tax years 2024–2027 were described as reflecting that date. ${tag("S12")} Other 2026 reporting talks about 2027 “after reassessment” millages. Those statements conflict; this prototype does not know which description applies to a given owner. See also the 2027 topic.`,
+        `Evidence used to judge value on appeal includes a recent sale of the property, nearby comparable sales, professional opinions, appraisals, insurance policies, photos, and contractor repair estimates. ${tag("S2")}${tag("S6")}`
+      ], ["S1","S2","S13","S12","S6","Calc"], ["assessor"]);
+    }
+  },
+  millage: {
+    keys: ["millage", "mill", "tax bill", "calculate", "how much tax", "121.20", "police", "fire", "due", "january", "formula"],
+    run() {
+      return htmlAnswer([
+        `The bill formula is: (assessed value − exemptions) × millage ÷ 1,000. One mill = $1 per $1,000 of taxable assessed value. ${tag("S3")}`,
+        `The 2026 citywide total is 121.20 mills. Homestead does not cover 11.51 mills of police and fire millage (Police 4.67, Fire 4.62 and 2.22). ${tag("S3")} Special districts (levee, DDD, neighborhood security) can add millage or a flat fee by location; those are extra. ${tag("S3")}`,
+        `Worked example using 2026 citywide millages only, not including special districts. ${tag("Calc")} Inputs: $300,000 home → $30,000 assessed (10% ratio from ${tag("S1")}); homestead $7,500 of assessed value; 109.69 homestead-covered mills and 11.51 uncovered mills from ${tag("S3")}. With homestead: 109.69 mills on $22,500 = $2,468.03, plus 11.51 mills on $30,000 = $345.30, total about $2,813. Without homestead: about $3,636. ${tag("Calc")}`,
+        `Bills are usually mailed in late December and due January 31. Unpaid taxes accrue 1% per month. ${tag("S4")}`
+      ], ["S3","S1","S4","Calc"], ["treasury","assessor"]);
+    }
+  },
+  homestead: {
+    keys: ["homestead", "exemption", "apply", "owner-occup", "freeze", "65", "veteran", "disabled", "special assessment", "income cap"],
+    run() {
+      return htmlAnswer([
+        `The homestead exemption covers the first $75,000 of fair market value ($7,500 of assessed value) of an owner-occupied primary residence. One per person or married couple. It does not cover the three police/fire millages (11.51 mills). ${tag("S3")}${tag("S11")}`,
+        `Eligible: an individual (or a trust set up by one) who owns and lives in the home. Not available for partnerships or corporations, business-use property, bond-for-deed, or lease-to-own without title. Surviving spouses can keep it. ${tag("S11")}`,
+        `Apply with the Assessor. Bring proof of ownership (act of sale or deed) and a Louisiana driver’s license or ID with the property address. Reapplication is not usually required. ${tag("S11")} A 2015 Assessor notice also asked for utility bills; that list may be outdated. ${tag("S14")} This prototype does not have a confirmed current Orleans online-vs-in-person application channel.`,
+        `Disaster rule: you can keep homestead if the home is unlivable by notifying the Assessor each year you plan to repair and return within five years. ${tag("S11")}`,
+        `Related options (not homestead): a special assessment level (“freeze”) can hold the total assessment for qualifying homestead owners who are 65+, certain veterans, or permanently totally disabled, subject to an income cap of $100,000 (CPI-adjusted). Posted legislative text shows a version effective January 1, 2027 raising the cap to $150,000; confirm implementation with the Assessor. ${tag("S1")} Disabled-veteran assessed-value reductions of $2,500–$12,000 are also described in secondary sources. ${tag("S6")}${tag("S11")}${tag("S14")}`,
+        `In Orleans, a freeze has also blocked decreases (“freeze trap”). The Assessor said differences would be credited toward 2027 taxes; as of August 2026 reimbursements had not appeared. ${tag("S9")}${tag("S10")}`
+      ], ["S3","S11","S14","S1","S6","S9","S10"], ["assessor"]);
+    }
+  },
+  reassess: {
+    keys: ["2027", "reassess", "reappraisal", "quadrennial", "roll-forward", "roll forward", "rollback", "november 5", "amendment"],
+    run() {
+      return htmlAnswer([
+        `I don’t know whether tax year 2027 was a parish-wide reappraisal of your value. The sources disagree, so this prototype will not pick one story.`,
+        `A 2023 law-firm article said the last parish-wide reassessment took effect for tax year 2024, total assessed values rose roughly 20%, and assessments for tax years 2024–2027 were described as based on January 1, 2023 values. ${tag("S12")}${tag("S6")}`,
+        `Separately, 2026 news said the City published “adjusted rates (after reassessment)” for the 2027 levy and a roll-forward proposal. When reassessment raises total values, millages roll back automatically; rolling forward takes a two-thirds Council vote and no new voter approval. A public hearing/vote was reported for November 5, 2026. ${tag("S7")}${tag("S8")}`,
+        `The Constitution requires reappraisal at least every four years. ${tag("S1")} From that rule plus the 2024 cycle, the next parish-wide reappraisal would be due for tax year 2028, with the work done in 2027 (rolls likely around mid-July). That timing is an inference, not a confirmed Assessor statement.`,
+        `FOX 8’s estimated cost of a full roll-forward included about +$178 for a $300,000 homestead and +$223 without homestead. ${tag("S7")} Those are news estimates, not this prototype’s advice to support or oppose the vote.`,
+        `Seniors and disabled owners with a freeze: 2026 reporting said the Assessor promised freeze-trap differences as credits toward 2027 taxes; as of August 2026 those reimbursements had not appeared. ${tag("S9")}${tag("S10")}`
+      ], ["S12","S6","S7","S8","S1","S9","S10"], ["assessor","treasury"]);
+    }
+  },
+  appeal: {
+    keys: ["appeal", "deadline", "board of review", "bor", "open roll", "hearing", "ltc", "tax commission", "evidence", "where do i go"],
+    run() {
+      return htmlAnswer([
+        `This prototype does not tell anyone whether to appeal or what value to claim. It only describes the published process.`,
+        `For tax year 2027, the calendar has already passed: rolls July 15–August 17, 2026; online appeals July 22–August 20, 2026 at 4 p.m.; Board of Review hearings September 15–25, 2026 at Delgado City Park Campus, 615 City Park Ave. ${tag("S2")}${tag("S5")} After a cycle ends, the next open-roll window is announced in July. A 2020 report noted rolls often open around July 15; confirm the current year with the Assessor rather than assuming. ${tag("S13")}`,
+        `Usual steps: (1) review the value during open rolls at nolaassessor.com or in person at City Hall 1300 Perdido 4th Floor, Algiers Courthouse 225 Morgan St., or Lakeview Christian Center 5885 Fleur De Lis Dr., weekdays 8:30–4; book an appraiser meeting 24+ hours ahead. (2) Informal review with Assessor staff; bring evidence. (3) File a Board of Review appeal online at nolaassessor.com or on paper (four copies of the form and all evidence). Incomplete appeals are denied. ${tag("S2")}${tag("S5")}${tag("S6")}`,
+        `The Board of Review hears assessed-value appeals. It cannot change prior-year assessments and has no authority over homestead denials, age freezes, or disability determinations. ${tag("S2")}`,
+        `If you already have a Board of Review decision: a written appeal to the Louisiana Tax Commission is due within 10 business days after the notice is postmarked or hand-delivered, using LTC Form 3103.A. ${tag("S2")} Then the courts. ${tag("S1")}`,
+        `The Council page FAQ has listed dates that do not always match its header. Use the most recent Assessor announcement for the current year. ${tag("S2")}`
+      ], ["S2","S5","S6","S13","S1"], ["bor","assessor","ltc"]);
+    }
+  }
+};
+
+const SAMPLES = [
+  "How is my assessed value different from market value?",
+  "How do I calculate my tax bill from millage?",
+  "How do I get the homestead exemption?",
+  "What does the 2027 reassessment mean for me?",
+  "How do I appeal and what is the deadline?"
+];
+
+function score(text, keys) {
+  const t = text.toLowerCase();
+  return keys.reduce((n, k) => n + (new RegExp(k, "i").test(t) ? 1 : 0), 0);
+}
+
+function looksLikeAddress(text) {
+  return /\b\d{2,6}\s+\w+/.test(text) && /\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|ct|court|pl|place|way)\b/i.test(text);
+}
+
+function wantsAdvice(text) {
+  const t = text.toLowerCase();
+  return /\b(should i|do i need to|what value should|how do i (lower|reduce|get out of)|recommend|is it worth appeal)/i.test(t);
+}
+
+function answer(question) {
+  const q = question.trim();
+  if (!q) return htmlAnswer(["Ask a question about how Orleans Parish assessments work."], [], ["assessor"]);
+
+  if (wantsAdvice(q)) {
+    return htmlAnswer([
+      `This prototype cannot tell you whether to appeal, what value to claim, or how to lower your taxes. That would be advice, not an explanation of the process.`,
+      `You can read how appeals are filed and which office handles which issue. For a decision, talk with a licensed attorney, CPA, or appraiser, and with the office that owns the process.`
+    ], ["S2"], ["assessor","bor"]);
+  }
+
+  if (looksLikeAddress(q) || /\b(parcel|alt id|my (house|property|bill) at)\b/i.test(q)) {
+    return htmlAnswer([
+      `Layer 2 (a lookup of a specific parcel on the 2025 and 2026 rolls) is not live in this draft. I cannot look up an address, owner, or assessed value.`,
+      `I can still explain how values, millage, exemptions, and appeals work in general.`
+    ], [], ["assessor"]);
+  }
+
+  const ranked = Object.entries(TOPICS)
+    .map(([id, topic]) => ({ id, n: score(q, topic.keys), topic }))
+    .sort((a, b) => b.n - a.n);
+
+  if (ranked[0].n === 0) {
+    return htmlAnswer([
+      `I don’t know. That question is not covered in the source notes this prototype is allowed to use, and I will not guess dates, millages, or eligibility.`,
+      `Try the Assessor for values and exemptions, the Board of Review for formal assessment appeals, or Treasury for bills.`
+    ], [], ["assessor","bor","treasury"]);
+  }
+
+  // Combine close seconds for compound questions (e.g. homestead + millage).
+  if (ranked[1] && ranked[1].n >= ranked[0].n && ranked[0].n > 0) {
+    return ranked[0].topic.run();
+  }
+  return ranked[0].topic.run();
+}
+
+const logEl = document.getElementById("log");
+const chips = document.getElementById("chips");
+SAMPLES.forEach((s) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = s;
+  b.addEventListener("click", () => submit(s));
+  chips.appendChild(b);
+});
+
+function add(role, html) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + role;
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  if (role === "user") bubble.textContent = html;
+  else bubble.innerHTML = html;
+  wrap.appendChild(bubble);
+  logEl.appendChild(wrap);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function submit(text) {
+  add("user", text);
+  add("bot", answer(text));
+}
+
+const params = new URLSearchParams(location.search);
+const shot = params.get("shot");
+if (!shot) {
+  add("bot", htmlAnswer([
+    `I answer general Orleans Parish assessment questions from a fixed source list. I will cite those sources, say I don’t know when they conflict or run out, and I will not give legal or tax advice.`
+  ], [], ["assessor"]));
+}
+
+document.getElementById("ask").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("q");
+  const text = input.value;
+  input.value = "";
+  submit(text);
+});
+
+if (shot && SAMPLES[Number(shot) - 1]) {
+  document.body.classList.add("shot");
+  submit(SAMPLES[Number(shot) - 1]);
+}
+</script>
+</body>
+</html>
