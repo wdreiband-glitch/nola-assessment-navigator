@@ -189,7 +189,7 @@
       <input id="q" type="text" autocomplete="off" placeholder="Ask how assessments, millage, homestead, or appeals work…" />
       <button type="submit">Ask</button>
     </form>
-    <footer>Will Dreiband · Tulane University · Layer 2 (your parcel) and Layer 3 (market context) are not live.</footer>
+    <footer>Will Dreiband · Tulane University · v0.3 · <a href="?all=1">See all five sample answers</a> · Layer 2 (your parcel) and Layer 3 (market context) are not live.</footer>
   </main>
 
 <script>
@@ -208,11 +208,16 @@ const SOURCES = {
   S12: { title: "Gordon Arata — 2024 quadrennial appeals", url: "https://gordonarata.com/dont-fall-flat-on-your-assessment-the-property-tax-appeals-deadline-is-august-18-2023/", type: "Law firm (2023)" },
   S13: { title: "BGR PolicyWatch — Revisiting Assessment Issues (2020)", url: "https://www.bgr.org/report-index/policywatch-revisiting-assessment-issues-in-new-orleans/", type: "Research (2020)" },
   S14: { title: "Biz New Orleans — Assessor homestead reminder (2015)", url: "https://bizneworleans.com/orleans-assessor-williams-reminds-property-owners-to-ensure-homestead-exemptions-special-assessments-are-up-to-date/", type: "News (2015)" },
+  S15: { title: "Louisiana Constitution Art. VII §20 (homestead exemption)", url: "https://www.legis.la.gov/legis/Law.aspx?d=206550", type: "Law" },
+  S16: { title: "Louisiana Constitution Art. VII §21(K) (disabled veterans)", url: "https://www.legis.la.gov/legis/Law.aspx?d=206551", type: "Law" },
+  S17: { title: "PAR Louisiana — Guide to the Fall 2026 Constitutional Amendments", url: "https://parlouisiana.org/wp-content/uploads/2026/10/PAR-Guide-to-the-Fall-2026-Constitutional-Amendments-FINAL.pdf", type: "Research (Oct 2026)" },
+  S18: { title: "WAFB — Louisiana voters pass 7 of 10 constitutional amendments (unofficial results)", url: "https://www.wafb.com/2026/11/04/louisiana-voters-pass-7-10-constitutional-amendments-ballot/", type: "News (Nov 4, 2026)" },
+  S19: { title: "NOLA Newswire — Orleans homestead exemptions can now be filed online (2021)", url: "https://nolanewswire.com/2021/06/orleans-assessor-homestead-exemptions-can-now-be-filed-online/", type: "News (2021)" },
   Calc: { title: "Prototype arithmetic by this student project using published millage inputs", url: "", type: "Calculation" }
 };
 
 const CONTACTS = {
-  assessor: "Orleans Parish Assessor — 504-754-8811 · nolaassessor.com · City Hall, 1300 Perdido St., 4th Floor (values, exemptions, freezes).",
+  assessor: "Orleans Parish Assessor — 504-754-8811 · nolaassessor.com · City Hall, 1300 Perdido St., 4th Floor (values, exemptions, freezes). Current homestead/freeze forms: nolaassessor.com/homestead-sal.",
   bor: "City Council sitting as Board of Review — 504-658-1080 (formal assessment appeals).",
   treasury: "City Bureau of Treasury — 504-658-1712 (bills and payments).",
   ltc: "Louisiana Tax Commission — latax.la.gov (appeals of Board of Review decisions)."
@@ -261,40 +266,45 @@ const TOPICS = {
     }
   },
   millage: {
-    keys: ["millage", "mill", "tax bill", "calculate", "how much tax", "121.20", "police", "fire", "due", "january", "formula"],
+    keys: ["millage", "mill", "tax bill", "calculate", "how much tax", "121.20", "police", "fire", "due", "january", "formula", "levee", "lakeview", "algiers", "east bank", "special district", "location", "neighborhood"],
     run() {
       return htmlAnswer([
         `The bill formula is: (assessed value − exemptions) × millage ÷ 1,000. One mill = $1 per $1,000 of taxable assessed value. ${tag("S3")}`,
         `The 2026 citywide total is 121.20 mills. Homestead does not cover 11.51 mills of police and fire millage (Police 4.67, Fire 4.62 and 2.22). ${tag("S3")} Special districts (levee, DDD, neighborhood security) can add millage or a flat fee by location; those are extra. ${tag("S3")}`,
         `Worked example using 2026 citywide millages only, not including special districts. ${tag("Calc")} Inputs: $300,000 home → $30,000 assessed (10% ratio from ${tag("S1")}); homestead $7,500 of assessed value; 109.69 homestead-covered mills and 11.51 uncovered mills from ${tag("S3")}. With homestead: 109.69 mills on $22,500 = $2,468.03, plus 11.51 mills on $30,000 = $345.30, total about $2,813. Without homestead: about $3,636. ${tag("Calc")}`,
+        `Location-specific example (same $300,000 home). Every East Bank or Algiers parcel also pays a levee millage: Orleans Levee District (East Bank) 10.79 mills; Algiers Levee District 10.81 mills. ${tag("S3")} In Orleans, homestead applies to levee and levee district taxes. ${tag("S15")} Suppose the home is on the East Bank and also inside the Lakeview Crime Prevention District, which the Treasury lists as a $150 flat fee. ${tag("S3")} With homestead: (109.69 + 10.79) = 120.48 mills on $22,500 = $2,710.80, plus 11.51 mills on $30,000 = $345.30, plus $150 = about $3,206. Without homestead: 131.99 mills on $30,000 = $3,959.70, plus $150 = about $4,110. ${tag("Calc")}`,
+        `Which special districts apply depends on the parcel; the bill or the Treasury can confirm yours. Other listed districts include the Downtown Development District (13.73 mills) and the Garden District Security District (7.13 mills). ${tag("S3")}`,
         `Bills are usually mailed in late December and due January 31. Unpaid taxes accrue 1% per month. ${tag("S4")}`
-      ], ["S3","S1","S4","Calc"], ["treasury","assessor"]);
+      ], ["S3","S1","S15","S4","Calc"], ["treasury","assessor"]);
     }
   },
   homestead: {
-    keys: ["homestead", "exemption", "apply", "owner-occup", "freeze", "65", "veteran", "disabled", "special assessment", "income cap"],
+    keys: ["homestead", "exemption", "apply", "owner-occup", "freeze", "65", "veteran", "disabled", "special assessment", "income cap", "150,000", "150k", "amendment 9", "surviving spouse"],
     run() {
       return htmlAnswer([
         `The homestead exemption covers the first $75,000 of fair market value ($7,500 of assessed value) of an owner-occupied primary residence. One per person or married couple. It does not cover the three police/fire millages (11.51 mills). ${tag("S3")}${tag("S11")}`,
         `Eligible: an individual (or a trust set up by one) who owns and lives in the home. Not available for partnerships or corporations, business-use property, bond-for-deed, or lease-to-own without title. Surviving spouses can keep it. ${tag("S11")}`,
-        `Apply with the Assessor. Bring proof of ownership (act of sale or deed) and a Louisiana driver’s license or ID with the property address. Reapplication is not usually required. ${tag("S11")} A 2015 Assessor notice also asked for utility bills; that list may be outdated. ${tag("S14")} This prototype does not have a confirmed current Orleans online-vs-in-person application channel.`,
-        `Disaster rule: you can keep homestead if the home is unlivable by notifying the Assessor each year you plan to repair and return within five years. ${tag("S11")}`,
-        `Related options (not homestead): a special assessment level (“freeze”) can hold the total assessment for qualifying homestead owners who are 65+, certain veterans, or permanently totally disabled, subject to an income cap of $100,000 (CPI-adjusted). Posted legislative text shows a version effective January 1, 2027 raising the cap to $150,000; confirm implementation with the Assessor. ${tag("S1")} Disabled-veteran assessed-value reductions of $2,500–$12,000 are also described in secondary sources. ${tag("S6")}${tag("S11")}${tag("S14")}`,
-        `In Orleans, a freeze has also blocked decreases (“freeze trap”). The Assessor said differences would be credited toward 2027 taxes; as of August 2026 reimbursements had not appeared. ${tag("S9")}${tag("S10")}`
-      ], ["S3","S11","S14","S1","S6","S9","S10"], ["assessor"]);
+        `How to apply: through the Orleans Parish Assessor. Bring proof of ownership (act of sale or deed) and a Louisiana driver’s license or state ID showing the property address. Once granted, it usually does not need to be renewed every year. ${tag("S11")} When the Assessor began accepting filings in a scheduled virtual session at nolaassessor.com (as well as by in-person appointment), it also asked for a current Entergy bill for the property with matching service and mailing addresses, or a landline or cable bill. ${tag("S19")} That is a 2021 news report. Check the Assessor’s current Homestead &amp; SAL page and form, or call, before you go.`,
+        `Disaster rule: you can keep homestead while the home is unlivable by notifying the Assessor each year that you plan to repair it and move back within five years. ${tag("S11")}`,
+        `Freeze (special assessment level): this holds the total assessment for homestead owners who are 65+, have a VA service-connected disability rating of 50% or more, or are permanently totally disabled, among others. It has an income cap of $100,000. ${tag("S1")}`,
+        `Proposed $150,000 cap: raising the cap to $150,000 needed voter approval. Act 220 of 2025 put it on the November 3, 2026 ballot as Amendment 9. If ratified, it takes effect January 1, 2027, and inflation adjustments start in tax year 2028. ${tag("S1")}${tag("S17")} Unofficial results reported November 4, 2026 show it passing, but those results are not certified. The Assessor has not said how it will apply the new cap, so this prototype does not know yet. ${tag("S18")}`,
+        `Disabled veterans get exemptions on top of homestead’s $7,500 of assessed value. 50–69% rating: an additional $2,500 (tax applies only above $10,000 of assessed value). 70–99% rating: an additional $4,500 (tax applies only above $12,000). 100% rating or unemployability: the rest of the homestead’s assessed value is exempt. Surviving spouses can qualify. ${tag("S16")} Amendment 1 on the same November 3, 2026 ballot lets a surviving spouse transfer this exemption once to a new home starting January 1, 2027. ${tag("S16")}${tag("S17")} Unofficial results show it passing. ${tag("S18")}`,
+        `In Orleans, a freeze has also blocked decreases (the “freeze trap”). The Assessor said the differences would be credited toward 2027 taxes. As of August 2026, those reimbursements had not appeared. ${tag("S9")}${tag("S10")}`
+      ], ["S3","S11","S19","S1","S17","S18","S16","S9","S10"], ["assessor"]);
     }
   },
   reassess: {
-    keys: ["2027", "reassess", "reappraisal", "quadrennial", "roll-forward", "roll forward", "rollback", "november 5", "amendment"],
+    keys: ["2027", "reassess", "reappraisal", "quadrennial", "roll-forward", "roll forward", "rollback", "november 5", "amendment 2"],
     run() {
       return htmlAnswer([
         `I don’t know whether tax year 2027 was a parish-wide reappraisal of your value. The sources disagree, so this prototype will not pick one story.`,
         `A 2023 law-firm article said the last parish-wide reassessment took effect for tax year 2024, total assessed values rose roughly 20%, and assessments for tax years 2024–2027 were described as based on January 1, 2023 values. ${tag("S12")}${tag("S6")}`,
-        `Separately, 2026 news said the City published “adjusted rates (after reassessment)” for the 2027 levy and a roll-forward proposal. When reassessment raises total values, millages roll back automatically; rolling forward takes a two-thirds Council vote and no new voter approval. A public hearing/vote was reported for November 5, 2026. ${tag("S7")}${tag("S8")}`,
+        `Separately, 2026 news said the City published “adjusted rates (after reassessment)” for the 2027 levy and a roll-forward proposal. When reassessment raises total values, millages roll back automatically; rolling forward takes a two-thirds Council vote and no new voter approval. A public hearing/vote was reported for November 5, 2026. ${tag("S7")}${tag("S8")} This prototype does not yet know the outcome.`,
+        `Statewide Amendment 2 (November 3, 2026) would have let taxing bodies keep a lower rate and still roll forward later. ${tag("S17")} Unofficial results show voters rejected it, so the current roll-forward rules stay in place. ${tag("S18")}`,
         `The Constitution requires reappraisal at least every four years. ${tag("S1")} From that rule plus the 2024 cycle, the next parish-wide reappraisal would be due for tax year 2028, with the work done in 2027 (rolls likely around mid-July). That timing is an inference, not a confirmed Assessor statement.`,
         `FOX 8’s estimated cost of a full roll-forward included about +$178 for a $300,000 homestead and +$223 without homestead. ${tag("S7")} Those are news estimates, not this prototype’s advice to support or oppose the vote.`,
         `Seniors and disabled owners with a freeze: 2026 reporting said the Assessor promised freeze-trap differences as credits toward 2027 taxes; as of August 2026 those reimbursements had not appeared. ${tag("S9")}${tag("S10")}`
-      ], ["S12","S6","S7","S8","S1","S9","S10"], ["assessor","treasury"]);
+      ], ["S12","S6","S7","S8","S17","S18","S1","S9","S10"], ["assessor","treasury"]);
     }
   },
   appeal: {
@@ -351,6 +361,9 @@ function answer(question) {
       `I can still explain how values, millage, exemptions, and appeals work in general.`
     ], [], ["assessor"]);
   }
+
+  // Specific phrases outrank generic words like "millage".
+  if (/roll.?forward|roll.?back|reassess|reappraisal|quadrennial/i.test(q)) return TOPICS.reassess.run();
 
   const ranked = Object.entries(TOPICS)
     .map(([id, topic]) => ({ id, n: score(q, topic.keys), topic }))
@@ -412,6 +425,13 @@ document.getElementById("ask").addEventListener("submit", (e) => {
   input.value = "";
   submit(text);
 });
+
+if (params.get("all") === "1") {
+  logEl.innerHTML = "";
+  add("bot", htmlAnswer([`Full responses to the five assignment sample questions, generated live by this page (v0.3).`], [], ["assessor"]));
+  SAMPLES.forEach((s) => submit(s));
+  logEl.scrollTop = 0;
+}
 
 if (shot && SAMPLES[Number(shot) - 1]) {
   document.body.classList.add("shot");
