@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="NOLA Assessment Navigator: a Tulane student prototype chatbot that explains Orleans Parish (New Orleans) property assessments, homestead exemptions, millage, tax bills, and how to appeal, with cited sources." />
+  <meta name="description" content="NOLA Assessment Navigator: a Tulane student prototype chatbot that explains Orleans Parish (New Orleans) property assessments, homestead exemptions, millage, tax bills, and how to appeal, with cited sources and a 2026 parcel lookup." />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://wdreiband-glitch.github.io/nola-assessment-navigator/" />
   <title>NOLA Assessment Navigator — Layer 1 (student prototype)</title>
@@ -96,6 +96,7 @@
       font-size: 13px;
       cursor: pointer;
     }
+    .chips button.l2 { border-style: dashed; }
     .chips button:hover { border-color: var(--navy); }
     #log {
       flex: 1;
@@ -180,16 +181,16 @@
   <header>
     <h1>NOLA Assessment Navigator</h1>
     <p>Plain-language answers about Orleans Parish assessments, millage, exemptions, and appeals — with sources.</p>
-    <span class="layer-tag">Layer 1 · general guidance</span>
+    <span class="layer-tag">Layer 1 · general guidance</span> <span class="layer-tag">Layer 2 · my property (2026 roll)</span>
   </header>
   <main>
     <div class="chips" id="chips"></div>
     <div id="log" aria-live="polite"></div>
     <form id="ask">
-      <input id="q" type="text" autocomplete="off" placeholder="Ask how assessments, millage, homestead, or appeals work…" />
+      <input id="q" type="text" autocomplete="off" placeholder="Ask a question, or type your address (e.g. 4713 Prytania St)…" />
       <button type="submit">Ask</button>
     </form>
-    <footer>Will Dreiband · Tulane University · v0.3 · <a href="?all=1">See all five sample answers</a> · Layer 2 (your parcel) and Layer 3 (market context) are not live.</footer>
+    <footer>Will Dreiband · Tulane University · v0.5 · <a href="?demo=1">Demo</a> · <a href="?all=1">All five sample answers</a> · Layer 2 uses the 2026 roll only (no owner names) · Layer 3 (market context) is not live.</footer>
   </main>
 
 <script>
@@ -213,6 +214,8 @@ const SOURCES = {
   S17: { title: "PAR Louisiana — Guide to the Fall 2026 Constitutional Amendments", url: "https://parlouisiana.org/wp-content/uploads/2026/10/PAR-Guide-to-the-Fall-2026-Constitutional-Amendments-FINAL.pdf", type: "Research (Oct 2026)" },
   S18: { title: "WAFB — Louisiana voters pass 7 of 10 constitutional amendments (unofficial results)", url: "https://www.wafb.com/2026/11/04/louisiana-voters-pass-7-10-constitutional-amendments-ballot/", type: "News (Nov 4, 2026)" },
   S19: { title: "NOLA Newswire — Orleans homestead exemptions can now be filed online (2021)", url: "https://nolanewswire.com/2021/06/orleans-assessor-homestead-exemptions-can-now-be-filed-online/", type: "News (2021)" },
+  S20: { title: "FOX 8 — Council approves millage roll-forward (Nov 5, 2026)", url: "https://www.fox8live.com/2026/11/05/new-orleans-city-council-approves-millage-roll-forward-raising-taxes-slashing-budget-deficit/", type: "News (Nov 2026)" },
+  R26: { title: "Orleans Parish 2026 LTC Expanded Real Estate Roll (tax year 2026; course data file, owner names removed)", url: "", type: "Assessment roll" },
   Calc: { title: "Prototype arithmetic by this student project using published millage inputs", url: "", type: "Calculation" }
 };
 
@@ -227,6 +230,7 @@ function tag(id) {
   const s = SOURCES[id];
   if (!s) return "";
   if (id === "Calc") return `<a class="cite" href="#calc">[Calc]</a>`;
+  if (!s.url) return `<span class="cite">[${id}]</span>`;
   return `<a class="cite" href="${s.url}" target="_blank" rel="noopener">[${id}]</a>`;
 }
 
@@ -235,7 +239,7 @@ function sourceList(ids) {
   const items = unique.map((id) => {
     const s = SOURCES[id];
     if (!s) return "";
-    if (id === "Calc") return `<div><strong>[Calc]</strong> ${s.title} (${s.type})</div>`;
+    if (id === "Calc" || !s.url) return `<div><strong>[${id}]</strong> ${s.title} (${s.type})</div>`;
     return `<div><a href="${s.url}" target="_blank" rel="noopener">[${id}] ${s.title}</a> · ${s.type}</div>`;
   }).join("");
   return `<div class="sources"><strong>Sources</strong>${items}</div>`;
@@ -266,7 +270,7 @@ const TOPICS = {
     }
   },
   millage: {
-    keys: ["millage", "mill", "tax bill", "calculate", "how much tax", "121.20", "police", "fire", "due", "january", "formula", "levee", "lakeview", "algiers", "east bank", "special district", "location", "neighborhood"],
+    keys: ["millage", "mill", "tax bill", "calculate", "how much tax", "121.20", "police", "fire", "due", "january", "formula", "property tax", "taxes", "what is the tax", "levee", "lakeview", "algiers", "east bank", "special district", "location", "neighborhood"],
     run() {
       return htmlAnswer([
         `The bill formula is: (assessed value − exemptions) × millage ÷ 1,000. One mill = $1 per $1,000 of taxable assessed value. ${tag("S3")}`,
@@ -279,7 +283,7 @@ const TOPICS = {
     }
   },
   homestead: {
-    keys: ["homestead", "exemption", "apply", "owner-occup", "freeze", "65", "veteran", "disabled", "special assessment", "income cap", "150,000", "150k", "amendment 9", "surviving spouse"],
+    keys: ["homestead", "exemption", "apply", "owner-occup", "veteran", "disabled", "surviving spouse"],
     run() {
       return htmlAnswer([
         `The homestead exemption covers the first $75,000 of fair market value ($7,500 of assessed value) of an owner-occupied primary residence. One per person or married couple. It does not cover the three police/fire millages (11.51 mills). ${tag("S3")}${tag("S11")}`,
@@ -293,18 +297,40 @@ const TOPICS = {
       ], ["S3","S11","S19","S1","S17","S18","S16","S9","S10"], ["assessor"]);
     }
   },
+  freeze: {
+    keys: ["freeze", "frozen", "\\b65\\b", "senior", "special assessment", "\\bsal\\b", "income cap", "150,000", "150k", "amendment 9", "turning 6"],
+    run() {
+      return htmlAnswer([
+        `The “freeze” is the Special Assessment Level. It holds your total assessment at the level of the first year you qualify. You must already have homestead, and you must be 65 or older, a veteran with a 50%+ service-connected disability rating, permanently totally disabled, or in certain other groups. The income cap is $100,000 (adjusted gross income). ${tag("S1")}`,
+        `How to apply: through the Orleans Parish Assessor, using its current Homestead &amp; SAL form (nolaassessor.com/homestead-sal), or call 504-754-8811. A 2015 report said the age freeze does not need renewing each year, while the disability freeze was renewed annually; that is old information, so confirm it. ${tag("S14")}`,
+        `Higher cap: Amendment 9 (November 3, 2026 ballot) would raise the cap to $150,000 starting January 1, 2027. ${tag("S1")}${tag("S17")} Unofficial results show it passing; they are not certified, and the Assessor has not said how it will apply the new cap. ${tag("S18")}`,
+        `Watch for the “freeze trap”: in Orleans a freeze has also blocked decreases in value. The Assessor said the differences would be credited toward 2027 taxes; as of August 2026 those credits had not appeared. ${tag("S9")}${tag("S10")}`
+      ], ["S1","S14","S17","S18","S9","S10"], ["assessor"]);
+    }
+  },
+  rollforward: {
+    keys: [],
+    run() {
+      return htmlAnswer([
+        `Yes. On November 5, 2026 the City Council unanimously approved a <em>partial</em> millage roll-forward of 4.039 mills (about $23.3 million). It will show up on 2027 tax bills. That is smaller than the full 7.44-mill proposal. ${tag("S20")}`,
+        `What a roll-forward is: when a reassessment raises total values, millage rates roll back automatically so the City does not collect a windfall. Rolling the rates forward again takes a two-thirds Council vote but no new voter approval. ${tag("S8")}`,
+        `What it costs one owner: no per-home figure was published for the partial roll-forward; the City pointed owners to its online calculator. ${tag("S20")} For the full 7.44-mill proposal, FOX 8 estimated about +$178 a year for a $300,000 homestead and +$223 without homestead, so the approved partial version would cost less. ${tag("S7")} These are news estimates, not your bill.`,
+        `Statewide Amendment 2, which would have changed roll-forward rules, failed in unofficial November 3 results, so the current rules still apply. ${tag("S17")}${tag("S18")}`
+      ], ["S20","S8","S7","S17","S18"], ["treasury","assessor"]);
+    }
+  },
   reassess: {
     keys: ["2027", "reassess", "reappraisal", "quadrennial", "roll-forward", "roll forward", "rollback", "november 5", "amendment 2"],
     run() {
       return htmlAnswer([
         `I don’t know whether tax year 2027 was a parish-wide reappraisal of your value. The sources disagree, so this prototype will not pick one story.`,
         `A 2023 law-firm article said the last parish-wide reassessment took effect for tax year 2024, total assessed values rose roughly 20%, and assessments for tax years 2024–2027 were described as based on January 1, 2023 values. ${tag("S12")}${tag("S6")}`,
-        `Separately, 2026 news said the City published “adjusted rates (after reassessment)” for the 2027 levy and a roll-forward proposal. When reassessment raises total values, millages roll back automatically; rolling forward takes a two-thirds Council vote and no new voter approval. A public hearing/vote was reported for November 5, 2026. ${tag("S7")}${tag("S8")} This prototype does not yet know the outcome.`,
+        `Separately, 2026 news said the City published “adjusted rates (after reassessment)” for the 2027 levy and a roll-forward proposal. When reassessment raises total values, millages roll back automatically; rolling forward takes a two-thirds Council vote and no new voter approval. A public hearing/vote was reported for November 5, 2026. ${tag("S7")}${tag("S8")} On November 5, 2026 the Council unanimously approved a <em>partial</em> roll-forward of 4.039 mills (about $23.3 million), which will show up on 2027 bills. ${tag("S20")} That is smaller than the full 7.44-mill proposal.`,
         `Statewide Amendment 2 (November 3, 2026) would have let taxing bodies keep a lower rate and still roll forward later. ${tag("S17")} Unofficial results show voters rejected it, so the current roll-forward rules stay in place. ${tag("S18")}`,
         `The Constitution requires reappraisal at least every four years. ${tag("S1")} From that rule plus the 2024 cycle, the next parish-wide reappraisal would be due for tax year 2028, with the work done in 2027 (rolls likely around mid-July). That timing is an inference, not a confirmed Assessor statement.`,
-        `FOX 8’s estimated cost of a full roll-forward included about +$178 for a $300,000 homestead and +$223 without homestead. ${tag("S7")} Those are news estimates, not this prototype’s advice to support or oppose the vote.`,
+        `FOX 8’s September estimate for the <em>full</em> roll-forward was about +$178 for a $300,000 homestead and +$223 without homestead. ${tag("S7")} The approved partial roll-forward is smaller; this prototype has no published per-home figure for it, and the City pointed owners to its online calculator. ${tag("S20")}`,
         `Seniors and disabled owners with a freeze: 2026 reporting said the Assessor promised freeze-trap differences as credits toward 2027 taxes; as of August 2026 those reimbursements had not appeared. ${tag("S9")}${tag("S10")}`
-      ], ["S12","S6","S7","S8","S17","S18","S1","S9","S10"], ["assessor","treasury"]);
+      ], ["S12","S6","S7","S8","S20","S17","S18","S1","S9","S10"], ["assessor","treasury"]);
     }
   },
   appeal: {
@@ -321,6 +347,128 @@ const TOPICS = {
     }
   }
 };
+
+// ---------- Layer 2: 2026 parcel lookup (owner-free extract of the 2026 roll) ----------
+const L2 = { meta: null, cache: {} };
+const MILLS = { covered: 109.69, policeFire: 11.51, leveeEast: 10.79, leveeAlgiers: 10.81 }; // [S3] 2026 levy
+const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
+
+async function l2Meta() {
+  if (!L2.meta) L2.meta = await (await fetch("data/meta.json")).json();
+  return L2.meta;
+}
+function l2Norm(text, meta) {
+  return text.toUpperCase().replace(/['’]/g, "").replace(/[^A-Z0-9]+/g, " ").trim().split(/\s+/)
+    .filter(Boolean).map((t) => meta.suffix[t] || t);
+}
+function l2Shard(street) {
+  const s = street.replace(/^(ST|GEN|N|S|E|W) /, "");
+  const c = s.slice(0, 1);
+  return /[A-Z]/.test(c) ? c : "0";
+}
+function extractAddress(q) {
+  const m = q.match(/\b(\d{1,7})\s+([A-Za-z][A-Za-z0-9 .#'’-]*)/);
+  if (!m) return null;
+  let rest = m[2].replace(/\b(new orleans|nola|louisiana|la|\d{5})\b.*$/i, "");
+  return { num: m[1], rest };
+}
+async function l2Find(q) {
+  const meta = await l2Meta();
+  const a = extractAddress(q);
+  if (!a) return null;
+  const toks = l2Norm(a.rest, meta);
+  const suffixes = new Set(meta.suffixes);
+  let cut = toks.findIndex((t, i) => i > 0 && suffixes.has(t));
+  const UNIT_WORDS = new Set(["UNIT", "APT", "APARTMENT", "STE", "SUITE", "NO", "NUMBER", "BLDG"]);
+  const streetToks = cut >= 0 ? toks.slice(0, cut + 1) : toks;
+  const unit = cut >= 0 ? toks.slice(cut + 1).filter((t) => !UNIT_WORDS.has(t)).join(" ") : "";
+  // The roll drops N/S/E/W prefixes (N and S Claiborne are both "CLAIBORNE AV"), so retry without one.
+  const variants = [streetToks];
+  if (streetToks.length > 1 && ["N", "S", "E", "W"].includes(streetToks[0])) variants.push(streetToks.slice(1));
+  let lastShard = null, lastWant = "";
+  for (const st of variants) for (let n = st.length; n >= 1; n--) {
+    const want = st.slice(0, n).join(" ");
+    const key = l2Shard(want);
+    if (!(key in L2.cache)) {
+      if (!meta.shards.includes(key)) { L2.cache[key] = {}; }
+      else L2.cache[key] = await (await fetch(`data/parcels/${key}.json`)).json();
+    }
+    const shard = L2.cache[key];
+    if (n === st.length && !lastShard) { lastShard = shard; lastWant = want; }
+    const streets = Object.keys(shard).filter((x) => x === want || (n === st.length && cut < 0 && x.startsWith(want + " ")));
+    const hits = streets.flatMap((x) => (shard[x][a.num] || []));
+    if (hits.length) return { hits, unit, typed: `${a.num} ${streetToks.join(" ")}` };
+  }
+  // No match: suggest same-number streets within 2 edits, but never pick one for the user.
+  const suggestions = lastShard ? Object.keys(lastShard).filter((x) => lastShard[x][a.num] && editDistance(x, lastWant) <= 2).slice(0, 5).map((x) => `${a.num} ${x}`) : [];
+  return { hits: [], typed: `${a.num} ${streetToks.join(" ")}`, suggestions };
+}
+function editDistance(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function rec(meta, r) { const o = {}; meta.fields.forEach((f, i) => (o[f] = r[i])); return o; }
+
+function parcelAnswer(p) {
+  const levee = p.district === 5 ? MILLS.leveeAlgiers : MILLS.leveeEast;
+  const leveeName = p.district === 5 ? "Algiers Levee District" : "Orleans Levee District (East Bank)";
+  const covered = p.taxableAV * (MILLS.covered + levee) / 1000;
+  const pf = (p.taxableAV + p.homestead) * MILLS.policeFire / 1000;
+  const ex = [];
+  if (p.homestead) ex.push(`homestead ${money(p.homestead)}`);
+  if (p.veteran) ex.push(`disabled veteran ${money(p.veteran)}`);
+  if (p.firstResponder) ex.push(`first responder ${money(p.firstResponder)}`);
+  if (p.other) ex.push(`other ${money(p.other)}`);
+  const paras = [
+    `Parcel ${p.parcel}, ${p.address} (Municipal District ${p.district}). This is what the 2026 roll shows; it is not an official record. ${tag("R26")}`,
+    `2026 market value ${money(p.totalMV)} (land ${money(p.landMV)}, improvements ${money(p.imprMV)}). Assessed value ${money(p.totalAV)}. Exemptions: ${ex.length ? ex.join("; ") : "none shown"}. Taxable assessed value ${money(p.taxableAV)}. ${tag("R26")}`,
+    `The roll lists a valuation date of January 1, 2023 for every parcel, so this market value is the Assessor’s estimate as of that date, not a current sale price. ${tag("R26")}`
+  ];
+  if (p.freeze && p.freeze !== "0") paras.push(`The roll shows freeze code ${p.freeze}. The file does not label the codes; code 1 appears on about 17,400 parcels, close to the roughly 17,000 age freezes reported for 2026, but this prototype cannot confirm what your code means. ${tag("R26")}${tag("S10")}`);
+  if (p.status === "EX") {
+    paras.push(`The roll lists this parcel as exempt (status EX), so it shows no taxable value. ${tag("R26")}`);
+  } else {
+    paras.push(`Rough 2026 tax estimate: ${(MILLS.covered + levee).toFixed(2)} mills (citywide homestead-covered plus ${leveeName}) on ${money(p.taxableAV)} = ${money(covered)}, plus 11.51 police/fire mills on ${money(p.taxableAV + p.homestead)} = ${money(pf)}, for about <strong>${money(covered + pf)}</strong>. ${tag("Calc")} Millages from ${tag("S3")}; homestead covers levee taxes ${tag("S15")}. Not included: DDD or security-district charges (the roll has no special-district field), and this assumes non-homestead exemptions also reduce the police/fire base. Your actual bill from the Treasury governs.`);
+  }
+  if (p.pseudo) paras.push(`This “address” uses a very large house number, which the roll uses as a placeholder for many vacant lots. ${tag("R26")}`);
+  paras.push(`Only the 2026 roll is loaded, so this prototype cannot say whether your value changed from 2025. It does not tell you whether to appeal.`);
+  const ids = ["R26"];
+  if (p.freeze && p.freeze !== "0") ids.push("S10");
+  if (p.status !== "EX") ids.push("S3", "S15", "Calc");
+  return htmlAnswer(paras, ids, ["assessor","treasury"]);
+}
+
+async function layer2(q) {
+  let found;
+  try { found = await l2Find(q); }
+  catch (e) {
+    return htmlAnswer([`The 2026 parcel data could not be loaded here. Open the hosted page or run a local web server; the lookup does not work from a double-clicked file.`], [], ["assessor"]);
+  }
+  if (!found) return null;
+  const meta = L2.meta;
+  if (!found.hits.length) {
+    const sug = (found.suggestions || []).length ? ` Did you mean ${found.suggestions.join(" or ")}? Ask again with the exact address.` : "";
+    return htmlAnswer([`I could not find “${found.typed}” in the 2026 roll. Check the house number and street spelling (the roll abbreviates, e.g. AV, BL, ST). I will not guess a nearby property.${sug} ${tag("R26")}`], ["R26"], ["assessor"]);
+  }
+  let recs = found.hits.map((r) => rec(meta, r));
+  if (found.unit && recs.length > 1) {
+    const u = recs.filter((p) => p.address.toUpperCase().replace(/\s+/g, " ").endsWith(" " + found.unit));
+    if (u.length) recs = u;
+  }
+  if (recs.length === 1) return parcelAnswer(recs[0]);
+  const list = recs.slice(0, 12).map((p) => `${p.address} — parcel ${p.parcel}`).join("<br>");
+  return htmlAnswer([`That address matches ${recs.length} parcels in the 2026 roll (often condo units). Ask again with the unit number as it appears below. ${tag("R26")}`, list + (recs.length > 12 ? `<br>…and ${recs.length - 12} more.` : "")], ["R26"], ["assessor"]);
+}
+
+const DEMO = [
+  "How do I calculate my tax bill from millage?",
+  "What is my value at 4713 Prytania St?",
+  "Should I appeal my assessment?"
+];
+const EXTRA_CHIPS = ["What is my value at 4713 Prytania St?", "I'm turning 65 — how do I freeze my assessment?", "Did the Council approve the millage roll-forward?", "Can you file my homestead for me?"];
 
 const SAMPLES = [
   "How is my assessed value different from market value?",
@@ -341,7 +489,35 @@ function looksLikeAddress(text) {
 
 function wantsAdvice(text) {
   const t = text.toLowerCase();
-  return /\b(should i|do i need to|what value should|how do i (lower|reduce|get out of)|recommend|is it worth appeal)/i.test(t);
+  return /\b(should i|do i need to|what value should|how (do|can) i (lower|reduce|get out of|cut)|recommend|is it worth appeal|(is|was) my (value|assessment|assessed value|bill|tax(es)?) (too high|fair|wrong|right|accurate|correct|overvalued)|am i (overassessed|over-assessed|overtaxed|paying too much)|will i win)/i.test(t);
+}
+
+function isAddressQuestion(q) {
+  const loose = looksLikeAddress(q) || /^\s*\d{1,7}\s+[A-Za-z]/.test(q) || /\b(at|for|is|on|of|up)\s+\d{1,7}\s+[A-Za-z]/i.test(q);
+  if (!loose) return false;
+  // A year such as "Is 2027 a reappraisal year?" is not a house number unless a street suffix follows.
+  const a = extractAddress(q);
+  if (a && /^(19|20)\d\d$/.test(a.num) && !looksLikeAddress(q)) return false;
+  return true;
+}
+
+function wantsOwnProperty(text) {
+  return /\b(look ?up|find|search|pull up|show me)\b.*\b(my|a|the)\s+(property|parcel|house|home|address|value|assessment)\b|\bwhat(?:'|’)?s?\s+(is\s+)?my\s+(property|house|home|parcel)?\s*(value|assessment|assessed value|tax bill|bill)\b(?!.*\b(different|differ|mean|work|calculat)\b)/i.test(text);
+}
+
+// Requests to DO something only an office can do: hand off to a person.
+function wantsAction(text) {
+  const V = "(file|submit|apply|sign me up|change|lower|reduce|fix|correct|update|appeal|grant|approve|remove|pay|waive|refund|enroll|register)";
+  const direct = new RegExp(`\\b(can|could|will|would)\\s+you\\s+(please\\s+|just\\s+|go\\s+ahead\\s+and\\s+)?${V}\\b`, "i").test(text);
+  const forMe = new RegExp(`\\b${V}\\b.*\\b(for me|on my behalf)\\b`, "i").test(text);
+  if (!direct && !forMe) return null;
+  let keys = ["assessor"], who = "the Orleans Parish Assessor";
+  if (/\b(pay|payment|bill|refund|late fee|interest)\b/i.test(text)) { keys = ["treasury"]; who = "the City Bureau of Treasury"; }
+  else if (/\b(appeal|board of review|hearing)\b/i.test(text)) { keys = ["bor","assessor","ltc"]; who = "the Assessor (informal review) and the City Council sitting as the Board of Review (formal appeal)"; }
+  return htmlAnswer([
+    `I can’t do that. This is a student prototype: it cannot file an application or appeal, change a value, grant an exemption, or take a payment, and it does not act for anyone.`,
+    `The office that handles this is ${who}. Their contact is below. If you want help deciding what to do, a licensed attorney, CPA, or appraiser can advise you; I can only explain how the published process works.`
+  ], [], keys);
 }
 
 function answer(question) {
@@ -355,15 +531,23 @@ function answer(question) {
     ], ["S2"], ["assessor","bor"]);
   }
 
-  if (looksLikeAddress(q) || /\b(parcel|alt id|my (house|property|bill) at)\b/i.test(q)) {
-    return htmlAnswer([
-      `Layer 2 (a lookup of a specific parcel on the 2025 and 2026 rolls) is not live in this draft. I cannot look up an address, owner, or assessed value.`,
-      `I can still explain how values, millage, exemptions, and appeals work in general.`
-    ], [], ["assessor"]);
+  const handoff = wantsAction(q);
+  if (handoff) return handoff;
+
+  if (/\b(who owns|who is the owner|owner.?s name|name of the owner)\b/i.test(q)) {
+    return htmlAnswer([`This prototype does not show owner names. Ask about the property’s values or exemptions by address instead.`], [], ["assessor"]);
+  }
+  if (isAddressQuestion(q)) {
+    return layer2(q).then((html) => html || htmlAnswer([`Include a house number and street to look up a 2026 parcel.`], [], ["assessor"]));
   }
 
+
   // Specific phrases outrank generic words like "millage".
-  if (/roll.?forward|roll.?back|reassess|reappraisal|quadrennial/i.test(q)) return TOPICS.reassess.run();
+  if (/roll.?forward|roll.?back|council (vote|approv)|did the council|millage (increase|hike)|tax (increase|hike)|november 5/i.test(q)) return TOPICS.rollforward.run();
+  if (/reassess|reappraisal|quadrennial/i.test(q)) return TOPICS.reassess.run();
+  if (wantsOwnProperty(q)) {
+    return htmlAnswer([`To look up your property, type its street address, for example “What is my value at 4713 Prytania St?” I search the 2026 assessment roll by exact address and show the parcel’s values, exemptions, and a rough tax estimate. I do not show owner names. ${tag("R26")}`], ["R26"], ["assessor"]);
+  }
 
   const ranked = Object.entries(TOPICS)
     .map(([id, topic]) => ({ id, n: score(q, topic.keys), topic }))
@@ -385,8 +569,9 @@ function answer(question) {
 
 const logEl = document.getElementById("log");
 const chips = document.getElementById("chips");
-SAMPLES.forEach((s) => {
+SAMPLES.concat(EXTRA_CHIPS).forEach((s) => {
   const b = document.createElement("button");
+  if (EXTRA_CHIPS.includes(s)) b.className = "l2";
   b.type = "button";
   b.textContent = s;
   b.addEventListener("click", () => submit(s));
@@ -407,14 +592,20 @@ function add(role, html) {
 
 function submit(text) {
   add("user", text);
-  add("bot", answer(text));
+  const out = answer(text);
+  if (out && typeof out.then === "function") {
+    add("bot", "Looking up the 2026 roll…");
+    const bubble = logEl.lastChild.querySelector(".bubble");
+    return out.then((html) => { bubble.innerHTML = html; });
+  }
+  add("bot", out);
 }
 
 const params = new URLSearchParams(location.search);
 const shot = params.get("shot");
 if (!shot) {
   add("bot", htmlAnswer([
-    `I answer general Orleans Parish assessment questions from a fixed source list. I will cite those sources, say I don’t know when they conflict or run out, and I will not give legal or tax advice.`
+    `I answer general Orleans Parish assessment questions from a fixed source list, and I can look up a property by street address in the 2026 assessment roll (try “What is my value at 4713 Prytania St?”). I am a student prototype, not the Assessor. I will cite sources, say I don’t know when they conflict or run out, and I will not give legal or tax advice.`
   ], [], ["assessor"]));
 }
 
@@ -428,9 +619,15 @@ document.getElementById("ask").addEventListener("submit", (e) => {
 
 if (params.get("all") === "1") {
   logEl.innerHTML = "";
-  add("bot", htmlAnswer([`Full responses to the five assignment sample questions, generated live by this page (v0.3).`], [], ["assessor"]));
+  add("bot", htmlAnswer([`Full responses to the five assignment sample questions, generated live by this page (v0.5).`], [], ["assessor"]));
   SAMPLES.forEach((s) => submit(s));
   logEl.scrollTop = 0;
+}
+
+if (params.get("demo") === "1") {
+  logEl.innerHTML = "";
+  add("bot", htmlAnswer([`In-class demo: one general question (Layer 1), one property lookup (Layer 2), and one question the bot refuses and hands to a person.`], [], ["assessor"]));
+  (async () => { for (const s of DEMO) await submit(s); logEl.scrollTop = 0; })();
 }
 
 if (shot && SAMPLES[Number(shot) - 1]) {
